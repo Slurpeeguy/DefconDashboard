@@ -10,8 +10,10 @@ import { findNearestBase } from '@/lib/militaryBases';
 const REST_URL = '/api/adsb/mil';
 const POLL_INTERVAL = 5000;       // 5 seconds
 const DARK_THRESHOLD = 2 * 60 * 1000; // 2 minutes
-const PRUNE_THRESHOLD = 10 * 60 * 1000; // 10 minutes
+const PRUNE_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours
 const MAX_PATH_POINTS = 2000;
+const STORAGE_KEY = 'defcon_aircraft';
+const SAVE_INTERVAL = 10000; // Save to localStorage every 10 seconds
 
 interface AdsbApiAircraft {
     hex?: string;
@@ -26,6 +28,42 @@ interface AdsbApiAircraft {
     r?: string;       // registration / serial
     seen?: number;
     [key: string]: unknown;
+}
+
+// ─── localStorage helpers ────────────────────────────────────
+
+function loadFromStorage(): Map<string, Aircraft> {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return new Map();
+        const arr: Aircraft[] = JSON.parse(raw);
+        const map = new Map<string, Aircraft>();
+        for (const ac of arr) {
+            // Rehydrate — only keep aircraft that were seen in the last 24 "hours" (or use PRUNE_THRESHOLD)
+            // Note: ships uses 24h, let's just keep everything that is dark so it isn't lost immediately
+            // But aircraft prune threshold is 10 minutes, so maybe only 10 minutes?
+            // Wait, if we keep them for 24h they will clutter the map. The existing prune logic 
+            // kills them after 10 mins. But if dark vehicles disappear, the user wants them longer?
+            // "so that every time it refreshes the lask known positions dont get lost"
+            // Let's use 24 hours for restore like ship data does, but let the `PRUNE_THRESHOLD` handle pruning them if needed, wait, if PRUNE_THRESHOLD is 10 mins, they will be deleted right after restore!
+            if (Date.now() - ac.lastSeen < 24 * 60 * 60 * 1000) {
+                map.set(ac.hex, ac);
+            }
+        }
+        console.log(`Loaded ${map.size} aircraft from localStorage`);
+        return map;
+    } catch {
+        return new Map();
+    }
+}
+
+function saveToStorage(map: Map<string, Aircraft>): void {
+    try {
+        const arr = Array.from(map.values());
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    } catch {
+        // Storage full or unavailable
+    }
 }
 
 function parseAircraft(raw: AdsbApiAircraft): Aircraft | null {
@@ -72,11 +110,12 @@ function parseAircraft(raw: AdsbApiAircraft): Aircraft | null {
 }
 
 export function useLiveAircraftData() {
-    const dataRef = useRef<Map<string, Aircraft>>(new Map());
+    const dataRef = useRef<Map<string, Aircraft>>(loadFromStorage());
     const [version, setVersion] = useState(0);
     const [connectionStatus, setConnectionStatus] = useState<AdsbConnectionStatus>('disconnected');
     const [rawCount, setRawCount] = useState(0);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const saveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const mountedRef = useRef(true);
 
     const fetchData = useCallback(async () => {
@@ -174,6 +213,11 @@ export function useLiveAircraftData() {
 
     useEffect(() => {
         mountedRef.current = true;
+
+        if (dataRef.current.size > 0) {
+            setVersion((v) => v + 1);
+        }
+
         fetchData();
         intervalRef.current = setInterval(fetchData, POLL_INTERVAL);
 
@@ -184,6 +228,18 @@ export function useLiveAircraftData() {
             }
         };
     }, [fetchData]);
+
+    // Persist to localStorage every 10 seconds
+    useEffect(() => {
+        saveTimerRef.current = setInterval(() => {
+            saveToStorage(dataRef.current);
+        }, SAVE_INTERVAL);
+
+        return () => {
+            if (saveTimerRef.current) clearInterval(saveTimerRef.current);
+            saveToStorage(dataRef.current);
+        };
+    }, []);
 
     const forceRefresh = useCallback(() => {
         fetchData();

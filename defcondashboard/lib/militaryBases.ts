@@ -51,6 +51,18 @@ export const MILITARY_BASES: MilitaryBase[] = [
     { name: 'NAS Pensacola', lat: 30.3530, lon: -87.3187, country: 'US' },
     { name: 'Fort Bragg / Pope', lat: 35.1392, lon: -79.0014, country: 'US' },
 
+    // ─── United States (Classified / Test / Missing) ─────
+    { name: 'Area 51 (Groom Lake)', lat: 37.2350, lon: -115.8111, country: 'US' },
+    { name: 'Tonopah Test Range', lat: 37.7958, lon: -116.7806, country: 'US' },
+    { name: 'Dugway Proving Ground (Michael AAF)', lat: 40.1981, lon: -112.8942, country: 'US' },
+    { name: 'Plant 42 (Palmdale)', lat: 34.6294, lon: -118.0831, country: 'US' },
+    { name: 'Cheyenne Mountain Complex', lat: 38.7436, lon: -104.8467, country: 'US' },
+    { name: 'Mount Weather EOC', lat: 39.0625, lon: -77.8889, country: 'US' },
+    { name: 'Site R (Raven Rock)', lat: 39.7350, lon: -77.4194, country: 'US' },
+    { name: 'Creech AFB', lat: 36.5878, lon: -115.6719, country: 'US' },
+    { name: 'Wright-Patterson AFB', lat: 39.8261, lon: -84.0389, country: 'US' },
+    { name: 'Tinker AFB', lat: 35.4147, lon: -97.3867, country: 'US' },
+
     // ─── United Kingdom ──────────────────────────────────
     { name: 'RAF Coningsby', lat: 53.0930, lon: -0.1664, country: 'GB' },
     { name: 'RAF Lossiemouth', lat: 57.7052, lon: -3.3391, country: 'GB' },
@@ -89,6 +101,17 @@ export const MILITARY_BASES: MilitaryBase[] = [
     { name: 'Krymsk AB', lat: 44.9678, lon: 37.9694, country: 'RU' },
     { name: 'Primorsko-Akhtarsk AB', lat: 46.0500, lon: 38.1833, country: 'RU' },
 
+    // ─── Russia (Arctic / Test / Missing) ─────────────────
+    { name: 'Plesetsk Cosmodrome', lat: 62.9256, lon: 40.5778, country: 'RU' },
+    { name: 'Vostochny Cosmodrome', lat: 51.8844, lon: 128.3344, country: 'RU' },
+    { name: 'Kapustin Yar (Test Range)', lat: 48.5656, lon: 45.8286, country: 'RU' },
+    { name: 'Nagurskoye AB (Franz Josef Land)', lat: 80.8033, lon: 47.6617, country: 'RU' },
+    { name: 'Rogachevo AB (Novaya Zemlya)', lat: 71.6167, lon: 52.4667, country: 'RU' },
+    { name: 'Temp AB (Kotelny Island)', lat: 75.7667, lon: 137.6667, country: 'RU' },
+    { name: 'Tiksi AB', lat: 71.6969, lon: 128.9028, country: 'RU' },
+    { name: 'Ugolny AB (Anadyr)', lat: 64.7350, lon: 177.7414, country: 'RU' },
+    { name: 'Votkinsk Machine Building Plant', lat: 57.0600, lon: 54.0083, country: 'RU' },
+
     // ─── China ───────────────────────────────────────────
     { name: 'Dingxin AB (Test Center)', lat: 40.2994, lon: 99.5069, country: 'CN' },
     { name: 'Lhasa Gonggar AB', lat: 29.2978, lon: 90.9119, country: 'CN' },
@@ -105,6 +128,16 @@ export const MILITARY_BASES: MilitaryBase[] = [
     { name: 'Korla AB (Xinjiang)', lat: 41.6981, lon: 86.1286, country: 'CN' },
     { name: 'Dalian Jinzhou AB', lat: 39.0678, lon: 121.9219, country: 'CN' },
     { name: 'Lingshui AB (Hainan)', lat: 18.5050, lon: 110.0392, country: 'CN' },
+
+    // ─── China (South China Sea / Test / Missing) ────────
+    { name: 'Fiery Cross Reef (SCS Island Base)', lat: 9.5500, lon: 112.8833, country: 'CN' },
+    { name: 'Subi Reef (SCS Island Base)', lat: 10.9167, lon: 114.0833, country: 'CN' },
+    { name: 'Mischief Reef (SCS Island Base)', lat: 9.9167, lon: 115.5333, country: 'CN' },
+    { name: 'Woody Island (Paracel Islands)', lat: 16.8333, lon: 112.3333, country: 'CN' },
+    { name: 'Malan AB (Nuclear Test Base)', lat: 42.1856, lon: 87.3197, country: 'CN' },
+    { name: 'Lop Nur (Test Facility)', lat: 40.1650, lon: 90.3550, country: 'CN' },
+    { name: 'Wuhu AB', lat: 31.3900, lon: 118.4081, country: 'CN' },
+    { name: 'Jiaxing AB', lat: 30.7028, lon: 120.6775, country: 'CN' },
 
     // ─── Iran ────────────────────────────────────────────
     { name: 'Isfahan (Khatami AB)', lat: 32.7500, lon: 51.8617, country: 'IR' },
@@ -238,6 +271,14 @@ export const MILITARY_BASES: MilitaryBase[] = [
     { name: 'CFB Greenwood', lat: 44.9744, lon: -64.9189, country: 'CA' },
     { name: 'CFB Comox', lat: 49.7108, lon: -124.8867, country: 'CA' },
     { name: 'CFB Moose Jaw', lat: 50.3303, lon: -105.5592, country: 'CA' },
+
+    // ─── Canada (Arctic / Missing) ───────────────────────
+    { name: 'CFB Alert (SIGINT)', lat: 82.5164, lon: -62.2806, country: 'CA' },
+    { name: 'CFB Goose Bay', lat: 53.3192, lon: -60.4258, country: 'CA' },
+    { name: 'CFB Gagetown', lat: 45.8361, lon: -66.4386, country: 'CA' },
+    { name: 'CFB Edmonton', lat: 53.6744, lon: -113.4758, country: 'CA' },
+    { name: 'CFB Borden', lat: 44.2708, lon: -79.9078, country: 'CA' },
+    { name: 'JTF2 HQ (Dwyer Hill Training Centre)', lat: 45.1278, lon: -75.9467, country: 'CA' },
 
     // ─── Additional Asia & SE Asia ───────────────────────
     { name: 'Kalaikunda AFS', lat: 22.3394, lon: 87.2147, country: 'IN' },

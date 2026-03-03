@@ -46,6 +46,7 @@ export default function Home() {
       tanker: true,
       showDark: false,
       showNuclearSites: false,
+      showICBMs: false,
       showMilitaryBases: false,
       showNavalBases: false,
       showAlerts: true,
@@ -170,14 +171,22 @@ export default function Home() {
     tanker: 0,
   };
 
+  let darkVehicleCount = 0;
+
   aircraft.forEach((ac) => {
-    if (ac.isDark && !filters.showDark) return;
+    if (ac.isDark) {
+      darkVehicleCount++;
+      if (!filters.showDark) return;
+    }
     if (ac.category === 'military') counts.military++;
     else if (ac.category === 'government') counts.government++;
   });
 
   ships.forEach((ship) => {
-    if (ship.isDark && !filters.showDark) return;
+    if (ship.isDark) {
+      darkVehicleCount++;
+      if (!filters.showDark) return;
+    }
     if (ship.category === 'naval') counts.naval++;
     else if (ship.category === 'tanker') counts.tanker++;
   });
@@ -204,6 +213,7 @@ export default function Home() {
         filters={filters}
         onToggle={toggleFilter}
         counts={counts}
+        darkVehicleCount={darkVehicleCount}
         adsbStatus={adsbStatus}
         aisStatus={aisStatus}
         aisKeyMissing={aisKeyMissing}

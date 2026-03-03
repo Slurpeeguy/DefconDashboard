@@ -63,6 +63,7 @@ export interface FilterState {
     tanker: boolean;
     showDark: boolean;
     showNuclearSites: boolean;
+    showICBMs: boolean;
     showMilitaryBases: boolean;
     showNavalBases: boolean;
     showAlerts: boolean;

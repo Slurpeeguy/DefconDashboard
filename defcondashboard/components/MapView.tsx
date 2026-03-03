@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import type { Aircraft, Ship, FilterState, SelectedVehicle } from '@/types';
 import { NUCLEAR_SITES } from '@/lib/nuclearSites';
 import { MILITARY_BASES } from '@/lib/militaryBases';
 import { NAVAL_BASES } from '@/lib/navalBases';
+import { ICBM_BASES } from '@/lib/icbmBases';
 import { getCountryNameFromCode, getFlagUrlFromCode } from '@/lib/countryFlags';
 
 // Helper to generate flag+country HTML for overlay popups
@@ -51,12 +52,50 @@ function createMilitaryBoatSvg(color: string): string {
   </svg>`;
 }
 
+function createWarshipSvg(color: string): string {
+    return `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <!-- Sleek hull shape -->
+    <path d="M16,2 L19,10 L19,28 L16,31 L13,28 L13,10 Z" fill="${color}" stroke="white" stroke-width="0.5"/>
+    <!-- Front gun/turret -->
+    <circle cx="16" cy="11" r="1.5" fill="white" fill-opacity="0.8"/>
+    <line x1="16" y1="11" x2="16" y2="7" stroke="white" stroke-width="0.8"/>
+    <!-- Superstructure bridge -->
+    <path d="M14,15 L18,15 L18,20 L16,22 L14,20 Z" fill="white" fill-opacity="0.4"/>
+    <!-- Helipad/Aft section -->
+    <rect x="14.5" y="23" width="3" height="4" fill="white" fill-opacity="0.2"/>
+    <circle cx="16" cy="25" r="1" fill="none" stroke="white" stroke-width="0.3"/>
+  </svg>`;
+}
+
 function createTankerSvg(color: string): string {
     return `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-    <path d="M10,2 L22,2 L22,27 L16,31 L10,27 Z"
+    <!-- Main Hull: blunt bow, straight sides, rounded stern -->
+    <path d="M12,4 L20,4 L20,26 C20,28.5 16,30 16,30 C16,30 12,28.5 12,26 Z" 
       fill="${color}" stroke="white" stroke-width="0.5"/>
-    <rect x="11" y="4" width="10" height="18" rx="1" fill="white" fill-opacity="0.1"/>
-    <path d="M11,24 L21,24 L21,28 L11,28 Z" fill="white" fill-opacity="0.3"/>
+    
+    <!-- Aft Superstructure (Bridge/Accommodation) -->
+    <rect x="13" y="24" width="6" height="4" fill="white" fill-opacity="0.6"/>
+    <rect x="14" y="22" width="4" height="2" fill="white" fill-opacity="0.8"/>
+    
+    <!-- Deck piping / manifold details -->
+    <line x1="16" y1="6" x2="16" y2="21" stroke="white" stroke-opacity="0.4" stroke-width="0.8"/>
+    <line x1="14" y1="10" x2="18" y2="10" stroke="white" stroke-opacity="0.5" stroke-width="0.5"/>
+    <line x1="14" y1="14" x2="18" y2="14" stroke="white" stroke-opacity="0.5" stroke-width="0.5"/>
+    <line x1="14" y1="18" x2="18" y2="18" stroke="white" stroke-opacity="0.5" stroke-width="0.5"/>
+    
+    <!-- Forward bow structure -->
+    <rect x="14.5" y="5" width="3" height="2" fill="white" fill-opacity="0.3"/>
+  </svg>`;
+}
+
+function createHelicopterSvg(color: string): string {
+    return `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16,4 L16,28 M4,16 L28,16 M6.5,6.5 L25.5,25.5 M6.5,25.5 L25.5,6.5" stroke="rgba(255,255,255,0.4)" stroke-width="0.5"/>
+    <circle cx="16" cy="16" r="14" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="0.5" stroke-dasharray="2,2"/>
+    <path d="M14,10 C14,8 18,8 18,10 L18,22 C18,24 14,24 14,22 Z" fill="${color}" stroke="white" stroke-width="0.5"/>
+    <rect x="15" y="22" width="2" height="6" fill="${color}" stroke="white" stroke-width="0.5"/>
+    <path d="M15,28 L18,28" stroke="white" stroke-width="1.5"/>
+    <path d="M15,10 C15,9 17,9 17,10 L17,12 L15,12 Z" fill="rgba(255,255,255,0.4)"/>
   </svg>`;
 }
 
@@ -84,6 +123,7 @@ interface MapViewProps {
 export default function MapView({ aircraft, ships, filters, selected, onSelect, dataVersion }: MapViewProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<maplibregl.Map | null>(null);
+    const [mapLoaded, setMapLoaded] = useState(false);
 
     // ─── Refs to avoid stale closures in map event handlers ────
     const aircraftRef = useRef(aircraft);
@@ -112,6 +152,9 @@ export default function MapView({ aircraft, ships, filters, selected, onSelect, 
     const navalBasesSourceId = 'naval-bases-source';
     const navalBasesLayerId = 'naval-bases-layer';
     const navalBasesLabelLayerId = 'naval-bases-label-layer';
+    const icbmBasesSourceId = 'icbm-bases-source';
+    const icbmBasesLayerId = 'icbm-bases-layer';
+    const icbmBasesLabelLayerId = 'icbm-bases-label-layer';
 
     // ─── Map Initialization ──────────────────────────────────────
     useEffect(() => {
@@ -149,11 +192,37 @@ export default function MapView({ aircraft, ships, filters, selected, onSelect, 
         });
 
         map.on('load', () => {
+            // Force English labels for all base map symbol layers
+            const style = map.getStyle();
+            if (style && style.layers) {
+                style.layers.forEach((layer) => {
+                    if (layer.type === 'symbol') {
+                        const textField = map.getLayoutProperty(layer.id, 'text-field');
+                        if (textField) {
+                            // If the text field references 'name', replace it completely with
+                            // an English-first strict coalesce array to wipe out dual-language formatting.
+                            const strField = JSON.stringify(textField);
+                            if (strField.includes('name')) {
+                                map.setLayoutProperty(layer.id, 'text-field', [
+                                    'coalesce',
+                                    ['get', 'name:en'],
+                                    ['get', 'name:latin'],
+                                    ['get', 'name']
+                                ]);
+                            }
+                        }
+                    }
+                });
+            }
+
             // Register detailed icons
             const iconTemplates = [
                 { id: 'mil-jet', svg: createFighterJetSvg(COLORS.military) },
                 { id: 'gov-jet', svg: createPrivateJetSvg(COLORS.government) },
+                { id: 'mil-heli', svg: createHelicopterSvg(COLORS.military) },
+                { id: 'gov-heli', svg: createHelicopterSvg(COLORS.government) },
                 { id: 'naval-ship', svg: createMilitaryBoatSvg(COLORS.naval) },
+                { id: 'naval-warship', svg: createWarshipSvg(COLORS.naval) },
                 { id: 'tanker-ship', svg: createTankerSvg(COLORS.tanker) },
                 { id: 'dark-vehicle', svg: createDarkIconSvg() },
             ];
@@ -457,6 +526,73 @@ export default function MapView({ aircraft, ships, filters, selected, onSelect, 
                 map.getCanvas().style.cursor = '';
                 navalPopup.remove();
             });
+
+            // ─── ICBM Bases Overlay ────────────────────────
+            const icbmFeatures = ICBM_BASES.map((b: any) => ({
+                type: 'Feature' as const,
+                properties: {
+                    name: b.name,
+                    country: b.country,
+                    weapon: b.weapon,
+                },
+                geometry: { type: 'Point' as const, coordinates: [b.lon, b.lat] }
+            }));
+
+            map.addSource(icbmBasesSourceId, {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: icbmFeatures }
+            });
+
+            map.addLayer({
+                id: icbmBasesLayerId,
+                type: 'circle',
+                source: icbmBasesSourceId,
+                paint: {
+                    'circle-radius': 6,
+                    'circle-color': '#dc2626',
+                    'circle-opacity': 0.8,
+                    'circle-stroke-width': 1.5,
+                    'circle-stroke-color': '#f87171',
+                    'circle-stroke-opacity': 0.9,
+                },
+                layout: { visibility: 'none' },
+            });
+
+            map.addLayer({
+                id: icbmBasesLabelLayerId,
+                type: 'symbol',
+                source: icbmBasesSourceId,
+                layout: {
+                    'text-field': ['get', 'name'],
+                    'text-size': 10,
+                    'text-offset': [0, 1.3],
+                    'text-anchor': 'top',
+                    'text-allow-overlap': false,
+                    visibility: 'none',
+                },
+                paint: {
+                    'text-color': '#dc2626',
+                    'text-halo-color': 'rgba(0,0,0,0.8)',
+                    'text-halo-width': 1,
+                },
+            });
+
+            const icbmPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 10 });
+            map.on('mouseenter', icbmBasesLayerId, (e) => {
+                map.getCanvas().style.cursor = 'pointer';
+                const f = e.features?.[0];
+                if (f) {
+                    icbmPopup.setLngLat((f.geometry as any).coordinates)
+                        .setHTML(`<div style="font:11px monospace;color:#dc2626;background:rgba(0,0,0,0.85);padding:6px 10px;border-radius:4px;border:1px solid rgba(220,38,38,0.3)">🚀 <strong>${f.properties.name}</strong><br/><span style="color:#ef4444">${f.properties.weapon}</span><br/><span style="color:#999">${countryHtml(f.properties.country)}</span></div>`)
+                        .addTo(map);
+                }
+            });
+            map.on('mouseleave', icbmBasesLayerId, () => {
+                map.getCanvas().style.cursor = '';
+                icbmPopup.remove();
+            });
+
+            setMapLoaded(true);
         });
 
         mapRef.current = map;
@@ -469,6 +605,7 @@ export default function MapView({ aircraft, ships, filters, selected, onSelect, 
 
     // ─── Sync Data to Layers ─────────────────────────────────────
     useEffect(() => {
+        if (!mapLoaded) return;
         const map = mapRef.current;
         if (!map || !map.isStyleLoaded()) return;
 
@@ -486,7 +623,11 @@ export default function MapView({ aircraft, ships, filters, selected, onSelect, 
                             id: ac.hex,
                             kind: 'aircraft',
                             heading: ac.heading ?? 0,
-                            icon: ac.isDark ? 'dark-vehicle' : (ac.category === 'military' ? 'mil-jet' : 'gov-jet')
+                            icon: ac.isDark
+                                ? 'dark-vehicle'
+                                : (ac.roleIcon === '🚁'
+                                    ? (ac.category === 'military' ? 'mil-heli' : 'gov-heli')
+                                    : (ac.category === 'military' ? 'mil-jet' : 'gov-jet'))
                         },
                         geometry: { type: 'Point', coordinates: [ac.lon, ac.lat] }
                     });
@@ -503,13 +644,14 @@ export default function MapView({ aircraft, ships, filters, selected, onSelect, 
                 const show = (!ship.isDark || filters.showDark) &&
                     ((ship.category === 'naval' && filters.naval) || (ship.category === 'tanker' && filters.tanker));
                 if (show) {
+                    const isWarship = ship.shipType.includes('Military') || ship.shipType.includes('Law Enforcement') || ship.shipType.includes('Warship');
                     shipFeatures.push({
                         type: 'Feature',
                         properties: {
-                            id: ship.mmsi,
+                            id: ship.mmsi.toString(),
                             kind: 'ship',
-                            heading: ship.heading ?? ship.course ?? 0,
-                            icon: ship.isDark ? 'dark-vehicle' : (ship.category === 'naval' ? 'naval-ship' : 'tanker-ship')
+                            heading: ship.heading || ship.course || 0,
+                            icon: ship.isDark ? 'dark-vehicle' : (ship.category === 'naval' ? (isWarship ? 'naval-warship' : 'naval-ship') : 'tanker-ship')
                         },
                         geometry: { type: 'Point', coordinates: [ship.lon, ship.lat] }
                     });
@@ -575,7 +717,11 @@ export default function MapView({ aircraft, ships, filters, selected, onSelect, 
         const navalVis = filters.showNavalBases ? 'visible' : 'none';
         if (map.getLayer(navalBasesLayerId)) map.setLayoutProperty(navalBasesLayerId, 'visibility', navalVis);
         if (map.getLayer(navalBasesLabelLayerId)) map.setLayoutProperty(navalBasesLabelLayerId, 'visibility', navalVis);
-    }, [dataVersion, filters, selected]);
+
+        const icbmVis = filters.showICBMs ? 'visible' : 'none';
+        if (map.getLayer(icbmBasesLayerId)) map.setLayoutProperty(icbmBasesLayerId, 'visibility', icbmVis);
+        if (map.getLayer(icbmBasesLabelLayerId)) map.setLayoutProperty(icbmBasesLabelLayerId, 'visibility', icbmVis);
+    }, [dataVersion, filters, selected, mapLoaded]);
 
     return (
         <div ref={containerRef} id="map-container" className="w-full h-full" style={{ position: 'absolute', inset: 0 }} />

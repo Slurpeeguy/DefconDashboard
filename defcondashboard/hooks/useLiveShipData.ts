@@ -120,16 +120,15 @@ export function useLiveShipData(apiKey?: string) {
             let wsUrl = '';
             let isDirect = false;
 
-            // Use direct connection if key is available (required for Vercel)
-            if (finalApiKey) {
+            // Use local proxy when running locally to avoid exhausting the 1-concurrent-connection limit
+            if (isLocalhost) {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                wsUrl = `${protocol}//${window.location.host}/api/ws/ais`;
+                console.log("Using local AIS proxy...");
+            } else if (finalApiKey) {
                 wsUrl = 'wss://stream.aisstream.io/v0/stream';
                 isDirect = true;
                 console.log("Connecting directly to aisstream.io using API key...");
-            } else if (isLocalhost) {
-                // Fallback to local proxy if no key but running locally
-                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                wsUrl = `${protocol}//${window.location.host}/api/ws/ais`;
-                console.log("No API key found in browser, attempting to connect to local AIS proxy...");
             } else {
                 console.error("Missing NEXT_PUBLIC_AISSTREAM_KEY environment variable. Cannot connect.");
                 setConnectionStatus('disconnected');

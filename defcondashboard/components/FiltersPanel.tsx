@@ -12,6 +12,7 @@ interface FiltersPanelProps {
         naval: number;
         tanker: number;
     };
+    darkVehicleCount: number;
     adsbStatus: AdsbConnectionStatus;
     aisStatus: AisConnectionStatus;
     aisKeyMissing: boolean;
@@ -48,6 +49,7 @@ export default function FiltersPanel({
     filters,
     onToggle,
     counts,
+    darkVehicleCount,
     adsbStatus,
     aisStatus,
     aisKeyMissing,
@@ -140,7 +142,7 @@ export default function FiltersPanel({
                     <FilterRow label="Oil Tankers" count={counts.tanker} checked={filters.tanker} color="#10b981" onChange={() => onToggle('tanker')} />
 
                     <div className="mt-2 pt-2 border-t border-white/5">
-                        <FilterRow label="Show Dark Vehicles" count={null} checked={filters.showDark} color="#9333ea" onChange={() => onToggle('showDark')} />
+                        <FilterRow label="Show Dark Vehicles" count={darkVehicleCount} checked={filters.showDark} color="#9333ea" onChange={() => onToggle('showDark')} />
                     </div>
                 </div>
 
@@ -150,7 +152,7 @@ export default function FiltersPanel({
                 <div>
                     <div className="text-[10px] uppercase tracking-widest text-gray-500 font-barlow mb-2">Display</div>
                     <FilterRow
-                        label="Tanker Alerts"
+                        label="Alerts"
                         count={null}
                         checked={filters.showAlerts}
                         color="#f59e0b"
@@ -170,6 +172,13 @@ export default function FiltersPanel({
                         checked={filters.showNuclearSites}
                         color="#facc15"
                         onChange={() => onToggle('showNuclearSites')}
+                    />
+                    <FilterRow
+                        label="ICBM Silos / Bases"
+                        count={null}
+                        checked={filters.showICBMs}
+                        color="#dc2626"
+                        onChange={() => onToggle('showICBMs')}
                     />
                     <FilterRow
                         label="Military Bases"
@@ -206,13 +215,15 @@ export default function FiltersPanel({
                     <div className="space-y-1 text-[11px] text-gray-400 font-mono">
                         <LegendItem color="#ef4444" label="Military" />
                         <LegendItem color="#f59e0b" label="Government / VIP" />
-                        <LegendItem color="#3b82f6" label="Naval" />
+                        <LegendItem color="#3b82f6" label="Naval (Other)" />
+                        <LegendItem color="#3b82f6" label="Naval (Warship)" isWarship={true} />
                         <LegendItem color="#10b981" label="Tanker" />
                         <div className="flex items-center gap-2">
                             <span className="w-3 h-3 rounded-sm border border-dashed border-purple-500" style={{ background: 'rgba(147,51,234,0.3)' }} />
                             Dark / Signal Lost
                         </div>
                         <LegendItem color="#facc15" label="☢ Nuclear Site" />
+                        <LegendItem color="#dc2626" label="🚀 ICBM Silo/Base" />
                         <LegendItem color="#f97316" label="🏛 Military Base" />
                         <LegendItem color="#06b6d4" label="⚓ Naval Base" />
                     </div>
@@ -227,13 +238,31 @@ export default function FiltersPanel({
                     <p className="text-[#9ca3af]">
                         Military aircraft and vessels regularly disable transponders during operational missions. Vehicle classifications and origins are inferred Algorithmically from hex codes, MMSI registrations, and relative proximity to known installations.
                     </p>
+                    <p className="text-red-400/80 border-t border-red-500/10 pt-2">
+                        <strong>OPSEC NOTE:</strong> You will rarely see domestic military traffic from <strong>Russia, China, or Iran</strong>. These nations strictly enforce operational security by keeping ADS-B and AIS transponders off for military assets, or by using proprietary, encrypted datalinks that public receiver networks cannot decode.
+                    </p>
                 </div>
             </div>
         </aside>
     );
 }
 
-function LegendItem({ color, label }: { color: string; label: string }) {
+function LegendItem({ color, label, isWarship = false }: { color: string; label: string; isWarship?: boolean }) {
+    if (isWarship) {
+        return (
+            <div className="flex items-center gap-2">
+                <svg width="12" height="12" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16,2 L19,10 L19,28 L16,31 L13,28 L13,10 Z" fill={color} stroke="white" strokeWidth="0.5" />
+                    <circle cx="16" cy="11" r="1.5" fill="white" fillOpacity="0.8" />
+                    <line x1="16" y1="11" x2="16" y2="7" stroke="white" strokeWidth="0.8" />
+                    <path d="M14,15 L18,15 L18,20 L16,22 L14,20 Z" fill="white" fillOpacity="0.4" />
+                    <rect x="14.5" y="23" width="3" height="4" fill="white" fillOpacity="0.2" />
+                    <circle cx="16" cy="25" r="1" fill="none" stroke="white" strokeWidth="0.3" />
+                </svg>
+                {label}
+            </div>
+        );
+    }
     return (
         <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-sm" style={{ background: color }} />
