@@ -113,14 +113,15 @@ export function useLiveShipData(apiKey?: string) {
 
     const connect = useCallback(() => {
         try {
-            // Use the passed-in apiKey instead of checking process.env again
+            // Hardcoded fallback because Vercel env injection is persistently failing
+            const finalApiKey = apiKey || process.env.NEXT_PUBLIC_AISSTREAM_KEY || "1d1586c71cc6bec2a9dd31aefb062e1a161ca649";
             const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
             let wsUrl = '';
             let isDirect = false;
 
             // Use direct connection if key is available (required for Vercel)
-            if (apiKey) {
+            if (finalApiKey) {
                 wsUrl = 'wss://stream.aisstream.io/v0/stream';
                 isDirect = true;
                 console.log("Connecting directly to aisstream.io using API key...");
@@ -145,9 +146,9 @@ export function useLiveShipData(apiKey?: string) {
                 }
 
                 // If connecting directly, we must send the subscription message
-                if (isDirect && apiKey) {
+                if (isDirect && finalApiKey) {
                     ws.send(JSON.stringify({
-                        APIKey: apiKey,
+                        APIKey: finalApiKey,
                         BoundingBoxes: [[[-90, -180], [90, 180]]],
                         FilterMessageTypes: ['PositionReport', 'ShipStaticData'],
                     }));
