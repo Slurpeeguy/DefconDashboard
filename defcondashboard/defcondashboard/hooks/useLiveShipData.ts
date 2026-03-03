@@ -99,7 +99,7 @@ function saveToStorage(map: Map<number, Ship>): void {
 
 // ─── Hook ────────────────────────────────────────────────────
 
-export function useLiveShipData() {
+export function useLiveShipData(apiKey: string | undefined) {
     // Load persisted ships on initial mount
     const dataRef = useRef<Map<number, Ship>>(loadFromStorage());
     const [version, setVersion] = useState(0);
@@ -113,7 +113,7 @@ export function useLiveShipData() {
 
     const connect = useCallback(() => {
         try {
-            const apiKey = process.env.NEXT_PUBLIC_AISSTREAM_KEY;
+            // Use the passed-in apiKey instead of checking process.env again
             const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
             let wsUrl = '';

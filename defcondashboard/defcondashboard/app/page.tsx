@@ -62,7 +62,8 @@ export default function Home() {
 
   // ─── Data hooks ─────────────────────────────────────────────
   const { aircraft, connectionStatus: adsbStatus, rawCount, forceRefresh, version: acVersion } = useLiveAircraftData();
-  const { ships, connectionStatus: aisStatus, apiKeyMissing: aisKeyMissing, version: shipVersion } = useLiveShipData();
+  const apiKey = process.env.NEXT_PUBLIC_AISSTREAM_KEY;
+  const { ships, connectionStatus: aisStatus, apiKeyMissing: aisKeyMissing, version: shipVersion } = useLiveShipData(apiKey);
 
   // ─── Selection ──────────────────────────────────────────────
   const [selected, setSelected] = useState<SelectedVehicle>(null);
