@@ -113,17 +113,44 @@ export function useLiveShipData(apiKey?: string) {
 
     const connect = useCallback(() => {
         try {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const localWsUrl = `${protocol}//${window.location.host}/api/ws/ais`;
+            // Use the passed-in apiKey instead of checking process.env again
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-            console.log("Attempting to connect to local AIS proxy...", localWsUrl);
-            const ws = new WebSocket(localWsUrl);
+            let wsUrl = '';
+            let isDirect = false;
+
+            // Use direct connection if key is available (required for Vercel)
+            if (apiKey) {
+                wsUrl = 'wss://stream.aisstream.io/v0/stream';
+                isDirect = true;
+                console.log("Connecting directly to aisstream.io using API key...");
+            } else if (isLocalhost) {
+                // Fallback to local proxy if no key but running locally
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                wsUrl = `${protocol}//${window.location.host}/api/ws/ais`;
+                console.log("No API key found in browser, attempting to connect to local AIS proxy...");
+            } else {
+                console.error("Missing NEXT_PUBLIC_AISSTREAM_KEY environment variable. Cannot connect.");
+                setConnectionStatus('disconnected');
+                return;
+            }
+
+            const ws = new WebSocket(wsUrl);
             wsRef.current = ws;
 
             ws.onopen = () => {
-                console.log("Local AIS Proxy WebSocket opened");
+                console.log(isDirect ? "Direct AIS WebSocket opened" : "Local AIS Proxy WebSocket opened");
                 if (mountedRef.current) {
                     setConnectionStatus('connected');
+                }
+
+                // If connecting directly, we must send the subscription message
+                if (isDirect && apiKey) {
+                    ws.send(JSON.stringify({
+                        APIKey: apiKey,
+                        BoundingBoxes: [[[-90, -180], [90, 180]]],
+                        FilterMessageTypes: ['PositionReport', 'ShipStaticData'],
+                    }));
                 }
             };
             ws.onmessage = (event) => {
@@ -312,4 +339,3 @@ export function useLiveShipData(apiKey?: string) {
         version,
     };
 }
-

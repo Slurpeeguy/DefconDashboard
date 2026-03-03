@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
   },
 
   reactStrictMode: false,
+  env: {
+    NEXT_PUBLIC_AISSTREAM_KEY: process.env.NEXT_PUBLIC_AISSTREAM_KEY,
+  },
 };
 
 export default nextConfig;
