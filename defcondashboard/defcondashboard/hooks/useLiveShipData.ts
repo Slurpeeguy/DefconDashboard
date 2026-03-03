@@ -99,7 +99,7 @@ function saveToStorage(map: Map<number, Ship>): void {
 
 // ─── Hook ────────────────────────────────────────────────────
 
-export function useLiveShipData(apiKey: string | undefined) {
+export function useLiveShipData(apiKey?: string) {
     // Load persisted ships on initial mount
     const dataRef = useRef<Map<number, Ship>>(loadFromStorage());
     const [version, setVersion] = useState(0);
